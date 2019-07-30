@@ -5,4 +5,4 @@ case class Impression(
                        app_id: Int,
                        advertiser_id: Int,
                        country_code: Option[String]
-                     )
+                     ) extends Event

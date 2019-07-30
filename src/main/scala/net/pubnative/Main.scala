@@ -1,93 +1,52 @@
-//#full-example
 package net.pubnative
 
-import akka.actor.{ Actor, ActorLogging, ActorRef, ActorSystem, Props }
+import akka.actor.{ActorRef, ActorSystem}
+import net.pubnative.actors.MasterActor
+import org.slf4j.{Logger, LoggerFactory}
+import akka.pattern._
+import akka.util.Timeout
+import net.pubnative.commands.TotalProcessingResult
 
-//#greeter-companion
-//#greeter-messages
-object Greeter {
-  //#greeter-messages
-  def props(message: String, printerActor: ActorRef): Props = Props(new Greeter(message, printerActor))
-  //#greeter-messages
-  final case class WhoToGreet(who: String)
-  case object Greet
-}
-//#greeter-messages
-//#greeter-companion
+import scala.concurrent.duration.{Duration, _}
+import scala.util.{Failure, Success}
 
-//#greeter-actor
-class Greeter(message: String, printerActor: ActorRef) extends Actor {
-  import Greeter._
-  import Printer._
+object Main extends App {
+  val log:Logger = LoggerFactory.getLogger("Main")
 
-  var greeting = ""
-
-  def receive = {
-    case WhoToGreet(who) =>
-      greeting = message + ", " + who
-    case Greet           =>
-      //#greeter-send-message
-      printerActor ! Greeting(greeting)
-      //#greeter-send-message
+  if (args.length == 0) {
+    log.error("Missing input arguments: at least one filename should be supplied. Aborting program...")
+    System.exit(1)
   }
-}
-//#greeter-actor
 
-//#printer-companion
-//#printer-messages
-object Printer {
-  //#printer-messages
-  def props: Props = Props[Printer]
-  //#printer-messages
-  final case class Greeting(greeting: String)
-}
-//#printer-messages
-//#printer-companion
-
-//#printer-actor
-class Printer extends Actor with ActorLogging {
-  import Printer._
-
-  def receive = {
-    case Greeting(greeting) =>
-      log.info("Greeting received (from " + sender() + "): " + greeting)
+  if (args.length > 200) {
+    log.error("Too many input arguments: 200 filenames is max. Aborting program...")
+    System.exit(1)
   }
+
+  implicit val timeout: Timeout = 30.minutes
+  val system: ActorSystem = ActorSystem("pubnative")
+  import system.dispatcher
+
+  val master: ActorRef = system.actorOf(MasterActor.props, "master")
+
+  master ? args onComplete( _ match {
+    case Success(TotalProcessingResult(reportResult, recommendationResult)) => {
+      log.info(s"Processing is finished: ${args.length} files processed.")
+      recommendationResult.output match {
+        case Success(filename) => {
+          log.info(s"App/Country recommendation created successfully! Output file: $filename")
+        }
+        case Failure(ex) => log.error(s"App/Country recommendation processing has failed: ${ex}")
+      }
+
+      reportResult.output match {
+        case Success(filename) => {
+          log.info(s"App/Country report created successfully! Output file: $filename")
+        }
+        case Failure(ex) => log.error(s"App/Country report processing has failed: ${ex}")
+      }
+    }
+    case Failure(ex) => log.error(s"Processing has failed: ${ex}")
+  })
+
 }
-//#printer-actor
-
-//#main-class
-object AkkaQuickstart extends App {
-  import Greeter._
-
-  // Create the 'helloAkka' actor system
-  val system: ActorSystem = ActorSystem("helloAkka")
-
-  //#create-actors
-  // Create the printer actor
-  val printer: ActorRef = system.actorOf(Printer.props, "printerActor")
-
-  // Create the 'greeter' actors
-  val howdyGreeter: ActorRef =
-    system.actorOf(Greeter.props("Howdy", printer), "howdyGreeter")
-  val helloGreeter: ActorRef =
-    system.actorOf(Greeter.props("Hello", printer), "helloGreeter")
-  val goodDayGreeter: ActorRef =
-    system.actorOf(Greeter.props("Good day", printer), "goodDayGreeter")
-  //#create-actors
-
-  //#main-send-messages
-  howdyGreeter ! WhoToGreet("Akka")
-  howdyGreeter ! Greet
-
-  howdyGreeter ! WhoToGreet("Lightbend")
-  howdyGreeter ! Greet
-
-  helloGreeter ! WhoToGreet("Scala")
-  helloGreeter ! Greet
-
-  goodDayGreeter ! WhoToGreet("Play")
-  goodDayGreeter ! Greet
-  //#main-send-messages
-}
-//#main-class
-//#full-example

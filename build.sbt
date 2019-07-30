@@ -4,6 +4,8 @@ version := "1.0"
 
 scalaVersion := "2.12.6"
 
+mainClass in (Compile, packageBin) := Some("net.pubnative.Main")
+
 lazy val akkaVersion = "2.6.0-M5"
 lazy val sprayVersion = "1.3.2"
 
