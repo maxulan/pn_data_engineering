@@ -1,0 +1,23 @@
+[
+  {
+    "app_id": 1,
+    "country_code": "DE",
+    "impressions": 7,
+    "clicks": 6,
+    "revenue": 10.5
+  },
+  {
+    "app_id": 2,
+    "country_code": "UK",
+    "impressions": 2,
+    "clicks": 1,
+    "revenue": 1.5
+  },
+  {
+    "app_id": 3,
+    "country_code": "IT",
+    "impressions": 1,
+    "clicks": 0,
+    "revenue": 0.0
+  }
+]

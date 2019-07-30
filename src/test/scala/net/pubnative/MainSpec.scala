@@ -7,6 +7,7 @@ import net.pubnative.actors.MasterActor
 import net.pubnative.commands.{RecommendationAggrResult, ReportAggrResult, TotalProcessingResult}
 
 import scala.concurrent.duration._
+import scala.io.Source
 import scala.language.postfixOps
 import scala.util.Success
 
@@ -16,7 +17,8 @@ class MainSpec(_system: ActorSystem)
     with ImplicitSender
     with Matchers
     with WordSpecLike
-    with BeforeAndAfterAll {
+    with BeforeAndAfterAll
+    with JsonTestHelper {
 
   def this() = this(ActorSystem("PubNativeSpec"))
 
@@ -24,22 +26,34 @@ class MainSpec(_system: ActorSystem)
     shutdown(system)
   }
 
-  "A Master Actor" should {
-    "manage computation pipeline of App/Country report and recommendation" in {
-
-      val files: Array[String] = Array(
-        getClass.getResource("/events/clicks.json").getFile,
-        getClass.getResource("/events/impressions.json").getFile
+  "A Case Study" should {
+    "produce App/Country report and recommendation files" in {
+      val eventFiles: Array[String] = Array(
+        getClass.getResource("/events/t1_clicks.json").getFile,
+        getClass.getResource("/events/t1_impressions.json").getFile
       )
       val master = system.actorOf(MasterActor.props, "master")
 
-      master ! files
-
+      master ! eventFiles
+      val reportOutFile = "app-country-report.json"
+      val recommendationsOutFile = "recommendations.json"
       expectMsg(10 seconds,
         TotalProcessingResult(
-          ReportAggrResult(Success("app-country-report.json")),
-          RecommendationAggrResult(Success("recommendations.json"))
+          ReportAggrResult(Success(reportOutFile)),
+          RecommendationAggrResult(Success(recommendationsOutFile))
         )
+      )
+      val expectedReport = getClass.getResource("/events/t1_expected_report.json").getFile
+      val expectedRecommendation = getClass.getResource("/events/t1_expected_recommendations.json").getFile
+
+      assert(
+        compareReports(expectedReport, reportOutFile) == true,
+        s"Report '${reportOutFile}' should match '${expectedReport}'"
+      )
+
+      assert(
+        compareRecommendations(expectedRecommendation, recommendationsOutFile) == true,
+        s"Recommendations '${recommendationsOutFile}' should match '${expectedRecommendation}'"
       )
     }
   }

@@ -1,0 +1,27 @@
+[
+  {
+    "app_id": 1,
+    "country_code": "DE",
+    "recommended_advertiser_ids": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
+  },
+  {
+    "app_id": 2,
+    "country_code": "UK",
+    "recommended_advertiser_ids": [
+      1
+    ]
+  },
+  {
+    "app_id": 3,
+    "country_code": "IT",
+    "recommended_advertiser_ids": [
+      2
+    ]
+  }
+]
