@@ -53,6 +53,7 @@ class MasterActor extends Actor with ActorLogging {
         case Success(filename) => {
           log.info(s"Parsing of $filename is completed.")
           if (isAllFilesParsed) {
+            context.stop(parserActor)
             joinActor ! Broadcast(Flush())
           }
         }
@@ -64,6 +65,7 @@ class MasterActor extends Actor with ActorLogging {
       joinWorkersFinished += 1
       log.info(s"${self.path} received ImpressionClickJoinResult. Finished $joinWorkersFinished workers.")
       if (isAllJoinsFlushed) {
+        context.stop(joinActor)
         aggregatorActor ! Flush()
       }
     }

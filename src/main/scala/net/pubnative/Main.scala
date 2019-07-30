@@ -11,7 +11,7 @@ import scala.concurrent.duration.{Duration, _}
 import scala.util.{Failure, Success}
 
 object Main extends App {
-  val log:Logger = LoggerFactory.getLogger("Main")
+  val log: Logger = LoggerFactory.getLogger("Main")
 
   if (args.length == 0) {
     log.error("Missing input arguments: at least one filename should be supplied. Aborting program...")
@@ -25,11 +25,16 @@ object Main extends App {
 
   implicit val timeout: Timeout = 30.minutes
   val system: ActorSystem = ActorSystem("pubnative")
+
   import system.dispatcher
 
   val master: ActorRef = system.actorOf(MasterActor.props, "master")
 
-  master ? args onComplete( _ match {
+  def stop = {
+    system.stop(master); system.terminate()
+  }
+
+  master ? args onComplete {
     case Success(TotalProcessingResult(reportResult, recommendationResult)) => {
       log.info(s"Processing is finished: ${args.length} files processed.")
       recommendationResult.output match {
@@ -45,8 +50,17 @@ object Main extends App {
         }
         case Failure(ex) => log.error(s"App/Country report processing has failed: ${ex}")
       }
+      stop
     }
-    case Failure(ex) => log.error(s"Processing has failed: ${ex}")
-  })
+    case Failure(ex) => {
+      log.error(s"Processing has failed: ${ex}")
+      stop
+    }
+    case Success(ok) => {
+      log.info(s"Processing is finished: ${args.length} files processed. Details: $ok")
+      stop
+    }
+  }
+
 
 }
