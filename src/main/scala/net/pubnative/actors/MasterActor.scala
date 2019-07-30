@@ -5,6 +5,7 @@ import java.nio.file.{Files, Paths}
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.routing.{Broadcast, ConsistentHashingPool, RoundRobinPool}
 import net.pubnative.commands._
+import net.pubnative.util.ProgramArgsValidator
 
 import scala.util.{Failure, Success, Try}
 
@@ -39,7 +40,7 @@ class MasterActor extends Actor with ActorLogging {
 
     case fileNames: Array[String] => {
       validate(fileNames) match {
-        case Success(true) => {
+        case Success(_) => {
           client = sender()
           sendToWorkers(fileNames)
         }
@@ -72,14 +73,14 @@ class MasterActor extends Actor with ActorLogging {
 
     case res: RecommendationAggrResult => {
       recommendationResult = res
-      if(areWeDone)  {
+      if (areWeDone) {
         client ! TotalProcessingResult(reportResult, recommendationResult)
       }
     }
 
     case res: ReportAggrResult => {
       reportResult = res
-      if(areWeDone)  {
+      if (areWeDone) {
         client ! TotalProcessingResult(reportResult, recommendationResult)
       }
     }
@@ -104,14 +105,8 @@ class MasterActor extends Actor with ActorLogging {
     }
   }
 
-  private def validate(fileNames: Iterable[String]): Try[Boolean] = {
-    val nonExisting = fileNames.filterNot(fileName => Files.exists(Paths.get(fileName)))
-
-    if (nonExisting.size > 0) {
-      val msg = "Invalid arguments. Following input files don't exist: " + nonExisting.mkString("\"", "\", \"", "\"")
-      return Failure(new IllegalArgumentException(msg))
-    }
-    Success(true)
-  }
+  private def validate(fileNames: Iterable[String]): Try[Unit] = Try(
+    ProgramArgsValidator.validate(fileNames)
+  )
 
 }

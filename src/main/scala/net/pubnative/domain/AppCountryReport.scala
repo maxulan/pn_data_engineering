@@ -3,6 +3,7 @@ package net.pubnative.domain
 object AppCountryReport {
 
   def fromAggregates(aggregates: Iterable[EventsAggregate]): Iterable[AppCountryReport] = {
+    if(Option(aggregates).isEmpty) return Nil
     aggregates.
       groupBy(agg => (agg.app_id, agg.country_code)).
       map {

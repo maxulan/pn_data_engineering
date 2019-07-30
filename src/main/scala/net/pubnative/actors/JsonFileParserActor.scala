@@ -20,7 +20,10 @@ import scala.concurrent.duration.FiniteDuration
 import scala.util.{Failure, Success}
 
 
-case class FileParsingException(filename: String, t: Throwable) extends Exception(t)
+final case class FileParsingException(filename: String, t: Throwable)
+  extends Exception("Failed to parse file \"" + filename + "\"" + (if (Option(t).isDefined) {
+    " Cause: " + t.getMessage
+  } else ""), t)
 
 object JsonFileParserActor {
 
