@@ -13,14 +13,6 @@ object ImpressionHits {
 
 }
 
-//override val id: String,
-//override val app_id: Int,
-//override val advertiser_id: Int,
-//override val country_code: Option[String],
-//var impressions: Long = 0,
-//var clicks: Long = 0,
-//var revenue: Double = 0
-//) extends Impression(id, app_id, advertiser_id, country_code) with EventHits {
 case class ImpressionHits(
                                 val id: String,
                                 val app_id: Int,
